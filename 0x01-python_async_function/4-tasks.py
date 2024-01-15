@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 import asyncio
 '''
 The `task_wait_n` function takes in two parameters, `n` and `max_delay`,
