@@ -60,7 +60,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False)
     ])
-    def test_has_licence(self, repo, licence_key, expected):
+    def test_has_license(self, repo, licence_key, expected):
         """
         The function `test_has_licence` tests the `has_license`
         method of the `GithubOrgClient` class by asserting that
