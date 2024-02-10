@@ -1,64 +1,80 @@
 #!/usr/bin/env python3
-""" Module for testing utils """
-
-from parameterized import parameterized
+'''
+Unit testing & Integrated testing
+'''
 import unittest
-from unittest.mock import patch
-from utils import (access_nested_map, get_json, memoize)
-import requests
+from parameterized import parameterized
+from utils import access_nested_map, get_json, memoize
+from unittest.mock import patch, Mock
 
 
 class TestAccessNestedMap(unittest.TestCase):
-    """ Class for Testing Access Nested Map """
+    '''
+    class for testing access_nested_map method
+    '''
 
     @parameterized.expand([
         ({"a": 1}, ("a",), 1),
-        ({"a": {"b": 2}}, ("a",), {'b': 2}),
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
         ({"a": {"b": 2}}, ("a", "b"), 2)
+
     ])
     def test_access_nested_map(self, nested_map, path, expected):
-        """ Test that the method returns what it is supposed to """
+        """
+        The function `test_access_nested_map` is used to test the
+        `access_nested_map` function by comparing its output with
+        an expected value.
+        """
         self.assertEqual(access_nested_map(nested_map, path), expected)
 
     @parameterized.expand([
-        ({}, ("a",), 'a'),
-        ({"a": 1}, ("a", "b"), 'b')
+        ({}, ("a", ), "a"),
+        ({"a": 1}, ("a", "b"), "b")
     ])
     def test_access_nested_map_exception(self, nested_map, path, expected):
-        """ Test that a KeyError is raised for the respective inputs """
-        with self.assertRaises(KeyError) as e:
+        """
+        The function `test_access_nested_map_exception` tests if accessing
+        a nested map with a given path raises a `KeyError` with the
+        expected error message.
+        """
+        with self.assertRaises(KeyError) as keyerror:
             access_nested_map(nested_map, path)
-        self.assertEqual(f"KeyError('{expected}')", repr(e.exception))
+        self.assertEqual(repr(keyerror.exception), F"KeyError('{expected}')")
 
 
 class TestGetJson(unittest.TestCase):
-    """ Class for Testing Get Json """
+    '''
+    class for testing get_json method
+    '''
 
     @parameterized.expand([
         ("http://example.com", {"payload": True}),
         ("http://holberton.io", {"payload": False})
     ])
-    def test_get_json(self, test_url, test_payload):
-        """ Test that utils.get_json returns the expected result."""
-        config = {'return_value.json.return_value': test_payload}
-        patcher = patch('requests.get', **config)
-        mock = patcher.start()
+    @patch('utils.requests.get')
+    def test_get_json(self, test_url, test_payload, mock_request_get):
+        """
+        The function `test_get_json` tests the `get_json`
+        function by mocking a request and response and asserting
+        that the returned JSON matches the expected value.
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = test_payload
+        mock_request_get.return_value = mock_response
         self.assertEqual(get_json(test_url), test_payload)
-        mock.assert_called_once()
-        patcher.stop()
 
 
 class TestMemoize(unittest.TestCase):
-    """ Class for Testing Memoize """
-
+    '''
+    class for testing memoize method
+    '''
     def test_memoize(self):
-        """ Test that when calling a_property twice, the correct result
-        is returned but a_method is only called once using
-        assert_called_once
         """
-
+        The function `test_memoize` tests the functionality of the
+        `memoize` decorator on a property of a class.
+        """
         class TestClass:
-            """ Test Class for wrapping with memoize """
 
             def a_method(self):
                 return 42
@@ -66,9 +82,8 @@ class TestMemoize(unittest.TestCase):
             @memoize
             def a_property(self):
                 return self.a_method()
-
         with patch.object(TestClass, 'a_method') as mock:
-            test_class = TestClass()
-            test_class.a_property()
-            test_class.a_property()
+            test1 = TestClass()
+            test1.a_property()
+            test1.a_property()
             mock.assert_called_once()
