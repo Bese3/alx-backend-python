@@ -2,8 +2,9 @@
 """ Module for testing client """
 import unittest
 from unittest.mock import patch, PropertyMock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+from fixtures import TEST_PAYLOAD
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -68,3 +69,48 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         Obj = GithubOrgClient("test")
         self.assertEqual(Obj.has_license(repo, licence_key), expected)
+
+
+@parameterized_class(
+    (
+                      "org_payload", "repos_payload",
+                      "expected_repos", "apache2_repos"
+    ),
+    TEST_PAYLOAD
+                      )
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """ Class for Integration test of fixtures """
+
+    @classmethod
+    def setUpClass(cls):
+        """A class method called before tests in an individual class are run"""
+        my_config = {'return_value.json.side_effect':
+                     [
+                         cls.org_payload, cls.repos_payload,
+                         cls.expected_repos, cls.apache2_repos
+                     ]
+                     }
+        cls.get_patcher = patch('requests.get', **my_config)
+        cls.mock = cls.get_patcher.start()
+        cls.test = GithubOrgClient('google')
+
+    def test_public_repos(self):
+        """ Integration test: public repos"""
+        self.assertEqual(self.test.org, self.org_payload)
+        self.assertEqual(self.test.repos_payload, self.repos_payload)
+        self.assertEqual(self.test.public_repos(), self.expected_repos)
+        self.assertEqual(self.test.public_repos('FAKE_LISENCE'), [])
+        self.mock.assert_called()
+
+    def test_public_repos_with_lisence(self):
+        """ Integration test for public repos with License """
+        self.assertEqual(self.test.public_repos(), self.expected_repos)
+        self.assertEqual(self.test.public_repos('FAKE_LISENCE'), [])
+        self.assertEqual(self.test.public_repos("apache-2.0"),
+                         self.apache2_repos)
+
+    @classmethod
+    def tearDownClass(cls):
+        """A class method called after tests in an individual class have run"""
+        cls.get_patcher.stop()
+        del cls.test
